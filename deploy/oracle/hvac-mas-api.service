@@ -8,6 +8,7 @@ Type=simple
 User=hvacmas
 Group=hvacmas
 WorkingDirectory=/opt/hvac-mas
+Environment=DEPLOYMENT_MODE=hosted
 EnvironmentFile=/etc/hvac-mas/hvac-mas.env
 ExecStart=/opt/hvac-mas/.venv/bin/uvicorn hvac_mas.api.main:app --host 127.0.0.1 --port 8000
 Restart=on-failure

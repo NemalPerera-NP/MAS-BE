@@ -5,6 +5,15 @@ PYTHON_BIN="${HVAC_PYTHON:-python}"
 export PYTHONPATH="$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
 export API_URL="${API_URL:-http://127.0.0.1:8000}"
 export CORS_ORIGINS="${CORS_ORIGINS:-http://127.0.0.1:5173,http://localhost:5173}"
+# Fail before touching logs or starting a second worker for an existing API.
+"$PYTHON_BIN" -c 'import socket,sys
+for port in (int(sys.argv[1]),5222,9090):
+    with socket.socket() as probe:
+        probe.settimeout(.3)
+        if probe.connect_ex(("127.0.0.1",port)) == 0:
+            raise SystemExit(f"Port {port} is already in use. Stop the existing HVAC services before running dev.sh again.")' "${API_URL##*:}"
+export PYTHONUNBUFFERED=1
+export LOG_LEVEL="${LOG_LEVEL:-INFO}"
 mkdir -p results/logs
 pids=()
 cleanup() {
@@ -14,10 +23,11 @@ cleanup() {
 }
 trap cleanup EXIT
 trap 'exit 130' INT TERM
-"$PYTHON_BIN" -m uvicorn hvac_mas.api.main:app --no-access-log --host 127.0.0.1 --port "${API_URL##*:}" >results/logs/backend.log 2>&1 &
+"$PYTHON_BIN" -m uvicorn hvac_mas.api.main:app --no-access-log --host 127.0.0.1 --port "${API_URL##*:}" > >(tee results/logs/backend.log) 2>&1 &
 pids+=("$!")
 wait_ready() {
   for ((attempt=0; attempt<100; attempt++)); do
+    for pid in "${pids[@]}"; do kill -0 "$pid" 2>/dev/null || return 1; done
     if "$PYTHON_BIN" -c 'import json, sys, urllib.request
 with urllib.request.urlopen(sys.argv[1] + "/health", timeout=1) as response:
     data = json.load(response)
@@ -38,7 +48,7 @@ if ! wait_ready api; then
   fi
   exit 1
 fi
-"$PYTHON_BIN" -m hvac_mas.runtime >results/logs/agents.log 2>&1 &
+"$PYTHON_BIN" -m hvac_mas.runtime > >(tee results/logs/agents.log) 2>&1 &
 pids+=("$!")
 wait_ready agents || { tail -20 results/logs/agents.log; exit 1; }
 printf 'Backend API %s\nFastAPI docs %s/docs\nBackend logs %s/results/logs\n' "$API_URL" "$API_URL" "$PWD"

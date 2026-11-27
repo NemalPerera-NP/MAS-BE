@@ -9,6 +9,7 @@ Type=simple
 User=hvacmas
 Group=hvacmas
 WorkingDirectory=/opt/hvac-mas
+Environment=DEPLOYMENT_MODE=hosted
 EnvironmentFile=/etc/hvac-mas/hvac-mas.env
 ExecStart=/opt/hvac-mas/.venv/bin/python -m hvac_mas.runtime
 Restart=on-failure

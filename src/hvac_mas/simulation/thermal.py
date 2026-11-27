@@ -4,6 +4,8 @@ from collections.abc import Mapping
 
 from hvac_mas.models.building import Building
 
+MAX_OCCUPANTS_PER_ZONE = 1000
+
 
 def advance_temperatures(building: Building, temperatures_c: Mapping[str, float], *,
                          outdoor_c: float, occupancy: Mapping[str, int],
@@ -18,8 +20,9 @@ def advance_temperatures(building: Building, temperatures_c: Mapping[str, float]
     values = [outdoor_c, seconds, *temperatures_c.values(), *hvac_kw.values()]
     if not all(math.isfinite(v) for v in values) or seconds <= 0:
         raise ValueError('inputs must be finite and time must be positive')
-    if any(not isinstance(n, int) or isinstance(n, bool) or n < 0 for n in occupancy.values()):
-        raise ValueError('occupancy must be nonnegative integers')
+    if any(not isinstance(n, int) or isinstance(n, bool) or not 0 <= n <= MAX_OCCUPANTS_PER_ZONE
+           for n in occupancy.values()):
+        raise ValueError(f'occupancy must be integers between 0 and {MAX_OCCUPANTS_PER_ZONE}')
     conductances = {zid: zone.outdoor_conductance_kw_per_c for zid, zone in zones.items()}
     for edge in building.couplings:
         conductances[edge.zone_a] += edge.conductance_kw_per_c

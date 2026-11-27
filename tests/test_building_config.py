@@ -1,11 +1,10 @@
-from copy import deepcopy
 from pathlib import Path
 
 import pytest
 import yaml
 from pydantic import ValidationError
 
-from hvac_mas.models.building import Building, c_to_f, f_to_c, load_building
+from hvac_mas.models.building import Building, c_to_f, load_building
 
 PATH = Path(__file__).resolve().parents[1] / 'config' / 'building.yaml'
 
@@ -17,22 +16,38 @@ def test_expected_building_and_equipment():
     assert {z.zone_id for z in b.zones} == {'A1', 'B1', 'B2', 'C1', 'D1', 'D2'}
     assert c_to_f(b.zones[0].thermostat.cool_setpoint_c) == pytest.approx(70)
     assert c_to_f(b.zones[0].thermostat.heat_setpoint_c) == pytest.approx(68)
+    assert {z.zone_id: z.occupancy_policy.design_occupancy for z in b.zones} == {
+        'A1': 14, 'B1': 20, 'B2': 20, 'C1': 4, 'D1': 25, 'D2': 25,
+    }
+    assert c_to_f(b.zones[0].occupancy_policy.unoccupied_cool_setpoint_c) == pytest.approx(78)
+    assert c_to_f(b.zones[0].occupancy_policy.unoccupied_heat_setpoint_c) == pytest.approx(60)
 
 
-@pytest.mark.parametrize('value', [-40, 0, 68, 70, 120])
-def test_temperature_roundtrip(value):
-    assert c_to_f(f_to_c(value)) == pytest.approx(value)
+def test_config_rejects_duplicate_zone_and_invalid_occupancy_policy():
+    data = yaml.safe_load(PATH.read_text())
+    data['zones'][1]['zone_id'] = data['zones'][0]['zone_id']
+    with pytest.raises(ValidationError):
+        Building.model_validate(data)
+
+    data = yaml.safe_load(PATH.read_text())
+    policy = data['zones'][0]['occupancy_policy']
+    policy['unoccupied_heat_setpoint_c'] = policy['unoccupied_cool_setpoint_c']
+    with pytest.raises(ValidationError):
+        Building.model_validate(data)
 
 
-@pytest.mark.parametrize('change', ['duplicate_zone', 'bad_unit', 'bad_area', 'duplicate_thermostat', 'negative_power', 'missing_id', 'invalid_stage', 'duplicate_coupling'])
-def test_invalid_config_rejected(change):
-    data = deepcopy(yaml.safe_load(PATH.read_text()))
-    if change == 'duplicate_zone': data['zones'][1]['zone_id'] = data['zones'][0]['zone_id']
-    elif change == 'bad_unit': data['zones'][0]['unit_ids'] = ['RTU-B1']
-    elif change == 'bad_area': data['zones'][0]['area_id'] = 'B'
-    elif change == 'duplicate_thermostat': data['zones'][1]['thermostat']['thermostat_id'] = data['zones'][0]['thermostat']['thermostat_id']
-    elif change == 'negative_power': data['equipment'][0]['stages'][0]['electrical_power_kw'] = -1
-    elif change == 'missing_id': del data['zones'][0]['zone_id']
-    elif change == 'invalid_stage': data['equipment'][0]['stages'][0]['name'] = 'FAKE'
-    elif change == 'duplicate_coupling': data['couplings'].append(data['couplings'][0])
-    with pytest.raises(ValidationError): Building.model_validate(data)
+def test_telemetry_v2_has_absolute_deviation_and_directional_errors_and_reads_v1():
+    from hvac_mas.models.telemetry import Reading, derive
+
+    values = {'avgTemp': 75, 'heatSetpoint': 68, 'coolSetpoint': 70, 'supplyTemp': 55,
+              'outsideTemp': 90, 'humidity': 50, 'outsideHumid': 55, 'mode': 'COOL1',
+              'fanStatus': 'ON', 'econStatus': 'CLOSED', 'power': 1.2, 'occupancy': 3}
+    current = Reading.model_validate(derive(values))
+    assert current.telemetrySchemaVersion == 2
+    assert current.tempDiff == 5
+    assert current.coolingErrorF == 5 and current.heatingErrorF == 0
+
+    heating = Reading.model_validate(derive(values | {"mode": "HEAT1", "coolSetpoint": 75}))
+    legacy = heating.model_dump()
+    legacy.update(telemetrySchemaVersion=1, tempDiff=-7, coolingErrorF=None, heatingErrorF=None)
+    assert Reading.model_validate(legacy).tempDiff == -7

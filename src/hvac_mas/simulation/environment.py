@@ -5,7 +5,7 @@ from pathlib import Path
 from random import Random
 
 import yaml
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from hvac_mas.models.building import ConfigModel, c_to_f, f_to_c
 
@@ -22,6 +22,7 @@ class FaultKind(StrEnum):
 
 
 class Fault(ConfigModel):
+    intervention_id: str | None = None
     unit_id: str
     kind: FaultKind
     magnitude: float | None = None
@@ -43,11 +44,67 @@ class Fault(ConfigModel):
                     (3 if self.magnitude is None else self.magnitude) * 5 / 9)
 
 
+class OccupancyInterval(ConfigModel):
+    start_minute: int = Field(ge=0, le=10080, strict=True)
+    end_minute: int = Field(gt=0, le=10080, strict=True)
+    occupants: int = Field(ge=0, le=1000, strict=True)
+
+    @model_validator(mode="after")
+    def valid_interval(self):
+        if self.end_minute <= self.start_minute:
+            raise ValueError("occupancy interval end must follow its start")
+        return self
+
+
+class OccupancyActionKind(StrEnum):
+    SET = "set"
+    ARRIVAL = "arrival"
+    DEPARTURE = "departure"
+    TRANSFER = "transfer"
+    TEMPORARY_ADD = "temporary_add"
+    RESTORE_SCHEDULE = "restore_schedule"
+
+
+class OccupancyAction(ConfigModel):
+    kind: OccupancyActionKind
+    zone_id: str | None = None
+    count: int | None = Field(default=None, ge=0, le=1000, strict=True)
+    source_zone_id: str | None = None
+    destination_zone_id: str | None = None
+    duration_minutes: int | None = Field(default=None, gt=0, le=10080, strict=True)
+
+    @model_validator(mode="after")
+    def valid_action(self):
+        if self.kind == OccupancyActionKind.TRANSFER:
+            if not self.source_zone_id or not self.destination_zone_id or self.source_zone_id == self.destination_zone_id:
+                raise ValueError("transfer requires distinct source and destination zones")
+            if self.count is None or self.count <= 0:
+                raise ValueError("transfer count must be positive")
+        elif self.kind == OccupancyActionKind.RESTORE_SCHEDULE:
+            if not self.zone_id:
+                raise ValueError("restore_schedule requires a zone")
+        else:
+            if not self.zone_id:
+                raise ValueError(f"{self.kind.value} requires a zone")
+            if self.kind == OccupancyActionKind.SET and self.count is None:
+                raise ValueError("set requires an occupant count")
+            if self.kind in (OccupancyActionKind.ARRIVAL, OccupancyActionKind.DEPARTURE,
+                             OccupancyActionKind.TEMPORARY_ADD) and (self.count is None or self.count <= 0):
+                raise ValueError(f"{self.kind.value} count must be positive")
+            if self.kind == OccupancyActionKind.TEMPORARY_ADD and self.duration_minutes is None:
+                raise ValueError("temporary_add requires duration_minutes")
+            if self.kind != OccupancyActionKind.TEMPORARY_ADD and self.duration_minutes is not None:
+                raise ValueError("duration_minutes is only valid for temporary_add")
+        return self
+
+
 class EnvironmentChange(ConfigModel):
+    intervention_id: str | None = None
     outdoor_f: float | None = Field(default=None, ge=-60, le=150)
     humidity: float | None = Field(default=None, ge=0, le=100)
     power_limit_kw: float | None = Field(default=None, gt=0)
     occupancy: dict[str, int] = Field(default_factory=dict)
+    occupancy_actions: tuple[OccupancyAction, ...] = ()
     zone_temperature_f: dict[str, float] = Field(default_factory=dict)
     setpoints_f: dict[str, tuple[float, float]] = Field(default_factory=dict)
     at_step: int = Field(default=0, ge=0)
@@ -62,10 +119,13 @@ class Scenario(ConfigModel):
     initial: EnvironmentChange = EnvironmentChange()
     changes: tuple[EnvironmentChange, ...] = ()
     faults: tuple[Fault, ...] = ()
+    occupancy_schedule: dict[str, tuple[OccupancyInterval, ...]] = Field(default_factory=dict)
 
 
 def load_scenarios(path: Path) -> dict[str, Scenario]:
-    return {key: Scenario.model_validate(value) for key, value in yaml.safe_load(path.read_text()).items()}
+    raw = yaml.safe_load(path.read_text())
+    defaults = raw.pop("_defaults", {})
+    return {key: Scenario.model_validate(defaults | value) for key, value in raw.items()}
 
 
 def weather(seconds: float, seed: int, cold: bool) -> dict:
@@ -75,14 +135,3 @@ def weather(seconds: float, seed: int, cold: bool) -> dict:
     value = lambda h: midpoint + amplitude * cos((h - 15) * 2 * pi / 24) + offset
     return {"outdoor_c": value(hour), "humidity": 55 - 10 * cos((hour - 15) * 2 * pi / 24),
             "forecast_c": value(hour + 1)}
-
-
-def occupancy(area_id: str, seconds: float) -> int:
-    hour = (9 + seconds / 3600) % 24
-    if area_id == "A":
-        return 14 if 9.5 <= hour < 10.5 or 14 <= hour < 15 else 0
-    if area_id == "B":
-        return max(0, min(18, int((hour - 7) * 9), int((19 - hour) * 9)))
-    if area_id == "C":
-        return int(8 <= hour < 17) * 3
-    return 25 if 9 <= hour < 12 or 13 <= hour < 16 else 0

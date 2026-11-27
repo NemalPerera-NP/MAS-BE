@@ -50,3 +50,14 @@ def test_recovery_that_stalls_is_confirmed_then_resolved():
     assert ("G5", "MONITORING_RECOVERY") in states
     assert ("G5", "CONFIRMED") in states
     assert ("G5", "RECOVERING") in states and ("G5", "RESOLVED") in states
+
+
+def test_g2_escalates_to_g5_without_confirming_both():
+    detector = Diagnostics(BUILDING, DiagnosticRules())
+    result = []
+    for packet in observations([74, 77, 77, 77, 77, 77]):
+        result.extend((event["kind"], event["status"]) for event in detector.observe(packet))
+    assert ("G2", "CANDIDATE") in result
+    assert ("G2", "ESCALATED") in result
+    assert ("G5", "CONFIRMED") in result
+    assert ("G2", "CONFIRMED") not in result

@@ -12,3 +12,15 @@ control:
   high_stage_error_c: 1.5
   comfort_band_c: 0.5
   max_rounds: 3
+  max_occupants_per_zone: 1000
+
+  cooling_start_delta_c: 0.44
+  cooling_stop_delta_c: 0.11
+  cooling_high_stage_delta_c: 1.67
+  cooling_high_stage_release_delta_c: 1.00
+  heating_start_delta_c: 0.44
+  heating_stop_delta_c: 0.11
+  heating_high_stage_delta_c: 1.67
+  heating_high_stage_release_delta_c: 1.00
+  max_temporary_occupancy_minutes: 1440
+  prediction_horizon_minutes: 15

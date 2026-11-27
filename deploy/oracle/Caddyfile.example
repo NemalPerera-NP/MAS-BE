@@ -1,3 +1,5 @@
 api.example.com {
+	@worker path /internal /internal/*
+	respond @worker 404
 	reverse_proxy 127.0.0.1:8000
 }

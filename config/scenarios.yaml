@@ -1,3 +1,21 @@
+_defaults:
+  # Zone counts are independent; intervals are minutes after the simulation starts.
+  occupancy_schedule:
+    A1:
+    - {start_minute: 30, end_minute: 90, occupants: 14}
+    - {start_minute: 300, end_minute: 360, occupants: 10}
+    B1:
+    - {start_minute: 0, end_minute: 240, occupants: 12}
+    B2:
+    - {start_minute: 15, end_minute: 255, occupants: 8}
+    C1:
+    - {start_minute: 0, end_minute: 240, occupants: 3}
+    D1:
+    - {start_minute: 0, end_minute: 180, occupants: 14}
+    - {start_minute: 240, end_minute: 360, occupants: 14}
+    D2:
+    - {start_minute: 0, end_minute: 180, occupants: 11}
+    - {start_minute: 240, end_minute: 360, occupants: 11}
 normal_cooling:
   title: Healthy summer
   description: Watch all six RTUs respond to the warm-day profile.
@@ -42,3 +60,102 @@ emergence:
     outdoor_f: 94
     power_limit_kw: 11
     zone_temperature_f: {A1: 77, B1: 78, B2: 77, C1: 76, D1: 77, D2: 77}
+morning_arrival:
+  title: Morning arrival
+  description: Begin with empty zones, then introduce scheduled arrivals across the building.
+  occupancy_schedule: {}
+  changes:
+    - at_step: 0
+      occupancy_actions:
+        - {kind: arrival, zone_id: B1, count: 12}
+        - {kind: arrival, zone_id: B2, count: 8}
+        - {kind: arrival, zone_id: C1, count: 3}
+    - at_step: 6
+      occupancy_actions:
+        - {kind: arrival, zone_id: A1, count: 14}
+        - {kind: arrival, zone_id: D1, count: 14}
+        - {kind: arrival, zone_id: D2, count: 11}
+meeting_finishes:
+  title: Meeting finishes
+  description: Let the meeting-room schedule end while the remaining rooms stay occupied.
+  occupancy_schedule:
+    A1: [{start_minute: 0, end_minute: 60, occupants: 14}]
+    B1: [{start_minute: 0, end_minute: 240, occupants: 12}]
+    B2: [{start_minute: 0, end_minute: 240, occupants: 8}]
+    C1: [{start_minute: 0, end_minute: 240, occupants: 3}]
+    D1: [{start_minute: 0, end_minute: 180, occupants: 14}]
+    D2: [{start_minute: 0, end_minute: 180, occupants: 11}]
+training_begins:
+  title: Training begins
+  description: Scheduled training occupancy arrives in D1 while other rooms follow the normal schedule.
+  occupancy_schedule:
+    A1: [{start_minute: 0, end_minute: 90, occupants: 14}]
+    B1: [{start_minute: 0, end_minute: 240, occupants: 12}]
+    B2: [{start_minute: 0, end_minute: 240, occupants: 8}]
+    C1: [{start_minute: 0, end_minute: 240, occupants: 3}]
+    D1: [{start_minute: 60, end_minute: 180, occupants: 25}]
+    D2: [{start_minute: 60, end_minute: 180, occupants: 20}]
+unexpected_overcrowding:
+  title: Unexpected overcrowding
+  description: Add a temporary group to an already occupied training room and evaluate the real thermal load.
+  initial:
+    outdoor_f: 94
+    power_limit_kw: 11
+  occupancy_schedule:
+    A1: [{start_minute: 0, end_minute: 90, occupants: 14}]
+    B1: [{start_minute: 0, end_minute: 240, occupants: 12}]
+    B2: [{start_minute: 0, end_minute: 240, occupants: 8}]
+    C1: [{start_minute: 0, end_minute: 240, occupants: 3}]
+    D1: [{start_minute: 0, end_minute: 180, occupants: 25}]
+    D2: [{start_minute: 0, end_minute: 180, occupants: 20}]
+  changes:
+    - at_step: 12
+      occupancy_actions: [{kind: temporary_add, zone_id: D1, count: 15, duration_minutes: 120}]
+competing_zones:
+  title: Competing occupied zones
+  description: Raise multiple occupied zones' thermal demand under a shared building power constraint.
+  initial:
+    outdoor_f: 94
+    power_limit_kw: 11
+    zone_temperature_f: {A1: 75, B1: 78, B2: 77, C1: 75, D1: 77, D2: 77}
+  occupancy_schedule:
+    A1: [{start_minute: 0, end_minute: 180, occupants: 14}]
+    B1: [{start_minute: 0, end_minute: 180, occupants: 20}]
+    B2: [{start_minute: 0, end_minute: 180, occupants: 20}]
+    C1: [{start_minute: 0, end_minute: 180, occupants: 4}]
+    D1: [{start_minute: 0, end_minute: 180, occupants: 25}]
+    D2: [{start_minute: 0, end_minute: 180, occupants: 25}]
+unexpected_office_arrival:
+  title: Unexpected office arrival
+  description: Introduce one occupant to an empty office and observe the policy and resource response.
+  occupancy_schedule: {}
+  changes:
+    - at_step: 12
+      occupancy_actions: [{kind: arrival, zone_id: C1, count: 1}]
+sustained_demand:
+  title: Sustained building demand
+  description: Apply staged occupancy increases while electrical capacity remains constrained.
+  initial:
+    outdoor_f: 92
+    power_limit_kw: 12
+  occupancy_schedule: {}
+  changes:
+    - at_step: 0
+      occupancy_actions:
+        - {kind: set, zone_id: B1, count: 20}
+        - {kind: set, zone_id: B2, count: 20}
+        - {kind: set, zone_id: D1, count: 25}
+    - at_step: 8
+      occupancy_actions:
+        - {kind: arrival, zone_id: A1, count: 14}
+        - {kind: arrival, zone_id: D2, count: 25}
+demand_response:
+  title: Demand-response event
+  description: Temporarily reduce shared electrical capacity, then restore it without prescribing agent actions.
+  initial:
+    outdoor_f: 94
+  changes:
+    - at_step: 6
+      power_limit_kw: 10
+    - at_step: 18
+      power_limit_kw: 17

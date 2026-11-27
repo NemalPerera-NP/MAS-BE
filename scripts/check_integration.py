@@ -80,7 +80,9 @@ def verify_mongo(collection, db, packet_id):
 
 
 def main():
-    with httpx.Client(base_url=API_URL, timeout=20) as client:
+    key = os.getenv("EVALUATOR_TOKEN")
+    headers = {"Authorization": f"Bearer {key}"} if key else {}
+    with httpx.Client(base_url=API_URL, timeout=20, headers=headers, trust_env=False) as client:
         health = get(client, "/health")
         assert health["agent_ready"], health
         assert len(get(client, "/simulation/state")["agents"]) == 12

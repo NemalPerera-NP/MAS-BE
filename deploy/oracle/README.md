@@ -70,11 +70,11 @@ sudo install -d -m 700 /etc/hvac-mas
 sudo nano /etc/hvac-mas/hvac-mas.env
 ```
 
-Copy the variable names from `deploy/oracle/hvac-mas.env.example` and replace the placeholders. Set `MONGODB_URI` to your Atlas connection string, `CORS_ORIGINS` to the exact Vercel origin, and use a long random value for `RUNTIME_TOKEN`. Use the same `RUNTIME_TOKEN` for both services; `API_URL` should remain `http://127.0.0.1:8000` because the worker and API share this VM.
+Copy the variable names from `deploy/oracle/hvac-mas.env.example` and replace the placeholders. Set `MONGODB_URI` to your Atlas connection string, `CORS_ORIGINS` to the exact Vercel origin, and set `DEPLOYMENT_MODE=hosted` with distinct random values for `RUNTIME_TOKEN` and `EVALUATOR_TOKEN`. Use the same `RUNTIME_TOKEN` for both services; `API_URL` should remain `http://127.0.0.1:8000` because the worker and API share this VM.
 
 If your MongoDB password contains reserved URI characters, use the URL-encoded password from Atlas or percent-encode those characters before setting `MONGODB_URI`.
 
-Generate a random runtime token on your Mac with `openssl rand -hex 32`, paste it into the VM environment file, then secure that file:
+Generate each token independently with `openssl rand -hex 32`, paste them into the VM environment file, then secure that file:
 
 ```sh
 sudo chown root:root /etc/hvac-mas/hvac-mas.env
@@ -126,8 +126,8 @@ Check the endpoint:
 curl https://api.example.com/health
 ```
 
-Wait for `agent_ready` to report `true`, then load the Vercel site and confirm the dashboard says **Agents connected**. Run only one API service and one SPADE worker; the current system uses in-process coordination and has one shared simulation.
+Wait for `agent_ready` to report `true`, then load the Vercel site, enter the evaluator access key, and confirm the dashboard says **Agents connected**. Run only one API service and one SPADE worker; the current system uses in-process coordination and has one shared simulation.
 
-## Exposure note
+## Evaluator access
 
-The current control API does not authenticate public users. CORS restricts browser origins but does not stop direct HTTP clients. Anyone who can reach the API can control the shared simulation. Add API authentication or an access-control layer before inviting unrestricted users.
+Arrange one authorized demonstration at a time. The evaluator key grants control of the shared run. Give the evaluator only `EVALUATOR_TOKEN` through a private channel, and rotate it after the demonstration by updating the server environment file and restarting both services. The worker endpoints are available to the local worker and blocked at Caddy.

@@ -89,3 +89,23 @@ async def test_stale_resume_timeout_reopens_stream_and_reconciles(monkeypatch):
     assert collection.watch.await_args_list[0].kwargs["resume_after"] == "old-token"
     assert "resume_after" not in collection.watch.await_args_list[1].kwargs
     assert received == ["retained"]
+
+
+@pytest.mark.asyncio
+async def test_history_operation_deadline_is_configurable(monkeypatch):
+    captured = {}
+    class Client:
+        admin = SimpleNamespace(command=AsyncMock(return_value={"setName":"replica"}))
+        close = AsyncMock()
+        def __init__(self, uri, **options):
+            captured.update(options)
+        def __getitem__(self, name):
+            return object()
+    monkeypatch.setattr(storage, "AsyncMongoClient", Client)
+    store = storage.Store(Settings(storage="mongo", mongodb_uri="mongodb://example.com",
+                                   mongodb_operation_timeout_ms=45000))
+    try:
+        await store.connect(indexes=False)
+        assert captured["timeoutMS"] == 45000
+    finally:
+        await store.close()

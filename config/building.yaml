@@ -32,6 +32,16 @@ zones:
     thermostat_id: TSTAT-A1
     heat_setpoint_c: 20.0
     cool_setpoint_c: 21.11111111111111
+  occupancy_policy:
+    design_occupancy: 14
+    unoccupied_confirmation_minutes: 10
+    unoccupied_heat_setpoint_c: 15.555555555555555
+    unoccupied_cool_setpoint_c: 25.555555555555557
+    occupied_fan_policy: continuous
+    unoccupied_fan_policy: continuous
+    preconditioning_enabled: true
+    preconditioning_minutes: 15
+    overload_warning_ratio: 1.0
   unit_ids:
   - RTU-A1
   floor_area_m2: 90
@@ -44,6 +54,16 @@ zones:
     thermostat_id: TSTAT-B1
     heat_setpoint_c: 20.0
     cool_setpoint_c: 21.11111111111111
+  occupancy_policy:
+    design_occupancy: 20
+    unoccupied_confirmation_minutes: 10
+    unoccupied_heat_setpoint_c: 15.555555555555555
+    unoccupied_cool_setpoint_c: 25.555555555555557
+    occupied_fan_policy: continuous
+    unoccupied_fan_policy: continuous
+    preconditioning_enabled: true
+    preconditioning_minutes: 15
+    overload_warning_ratio: 1.0
   unit_ids:
   - RTU-B1
   floor_area_m2: 150
@@ -56,6 +76,16 @@ zones:
     thermostat_id: TSTAT-B2
     heat_setpoint_c: 20.0
     cool_setpoint_c: 21.11111111111111
+  occupancy_policy:
+    design_occupancy: 20
+    unoccupied_confirmation_minutes: 10
+    unoccupied_heat_setpoint_c: 15.555555555555555
+    unoccupied_cool_setpoint_c: 25.555555555555557
+    occupied_fan_policy: continuous
+    unoccupied_fan_policy: continuous
+    preconditioning_enabled: true
+    preconditioning_minutes: 15
+    overload_warning_ratio: 1.0
   unit_ids:
   - RTU-B2
   floor_area_m2: 150
@@ -68,6 +98,16 @@ zones:
     thermostat_id: TSTAT-C1
     heat_setpoint_c: 20.0
     cool_setpoint_c: 21.11111111111111
+  occupancy_policy:
+    design_occupancy: 4
+    unoccupied_confirmation_minutes: 10
+    unoccupied_heat_setpoint_c: 15.555555555555555
+    unoccupied_cool_setpoint_c: 25.555555555555557
+    occupied_fan_policy: continuous
+    unoccupied_fan_policy: continuous
+    preconditioning_enabled: true
+    preconditioning_minutes: 15
+    overload_warning_ratio: 1.0
   unit_ids:
   - RTU-C1
   floor_area_m2: 60
@@ -80,6 +120,16 @@ zones:
     thermostat_id: TSTAT-D1
     heat_setpoint_c: 20.0
     cool_setpoint_c: 21.11111111111111
+  occupancy_policy:
+    design_occupancy: 25
+    unoccupied_confirmation_minutes: 10
+    unoccupied_heat_setpoint_c: 15.555555555555555
+    unoccupied_cool_setpoint_c: 25.555555555555557
+    occupied_fan_policy: continuous
+    unoccupied_fan_policy: continuous
+    preconditioning_enabled: true
+    preconditioning_minutes: 15
+    overload_warning_ratio: 1.0
   unit_ids:
   - RTU-D1
   floor_area_m2: 120
@@ -92,6 +142,16 @@ zones:
     thermostat_id: TSTAT-D2
     heat_setpoint_c: 20.0
     cool_setpoint_c: 21.11111111111111
+  occupancy_policy:
+    design_occupancy: 25
+    unoccupied_confirmation_minutes: 10
+    unoccupied_heat_setpoint_c: 15.555555555555555
+    unoccupied_cool_setpoint_c: 25.555555555555557
+    occupied_fan_policy: continuous
+    unoccupied_fan_policy: continuous
+    preconditioning_enabled: true
+    preconditioning_minutes: 15
+    overload_warning_ratio: 1.0
   unit_ids:
   - RTU-D2
   floor_area_m2: 120

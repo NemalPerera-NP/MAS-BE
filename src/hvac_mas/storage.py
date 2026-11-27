@@ -43,7 +43,8 @@ class Store:
         # writes occur until the topology check passes.
         for attempt in range(2):
             self.client = AsyncMongoClient(uri, tz_aware=True, connectTimeoutMS=10000,
-                                           serverSelectionTimeoutMS=20000, timeoutMS=5000)
+                                           serverSelectionTimeoutMS=20000,
+                                           timeoutMS=self.settings.mongodb_operation_timeout_ms)
             self.db = self.client[self.settings.mongodb_database]
             try:
                 with timeout(30):
@@ -167,14 +168,18 @@ class Store:
                 {"expiresAt": {"$gt": now()}, "restoreCandidate": True}, sort=[("updatedAt", -1)])
         return clean(latest) if latest else None
 
-    async def query(self, name, filters, limit=300):
+    async def query(self, name, filters, limit=300, *, fields=None):
         if self.db is None:
             self.prune(name)
             rows = (r for r in self.memory[name].values() if all(r.get(k) == v for k, v in filters.items()))
             rows = sorted(rows, key=lambda r: (r.get("simulationStep", -1), r.get("ingestedAt"), r["_id"]),
                           reverse=True)[:limit]
+            if fields is not None:
+                rows = [{key: value for key, value in row.items() if key in fields or key == "_id"}
+                        for row in rows]
         else:
-            rows = await self.collection(name).find(filters).sort(
+            projection = {field: 1 for field in fields} if fields is not None else None
+            rows = await self.collection(name).find(filters, projection).sort(
                 [("simulationStep", -1), ("ingestedAt", -1), ("_id", -1)]).limit(limit).to_list()
         return [clean(r) for r in rows]
 

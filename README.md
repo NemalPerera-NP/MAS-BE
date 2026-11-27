@@ -45,7 +45,7 @@ Deploy this repository as two long-running Python services on a host that suppor
 | FastAPI web service | `pip install .` | `uvicorn hvac_mas.api.main:app --host 0.0.0.0 --port $PORT` |
 | SPADE worker | `pip install .` | `python -m hvac_mas.runtime` |
 
-Set `STORAGE=mongo`, `MONGODB_URI`, `MONGODB_DATABASE`, and the same strong random `RUNTIME_TOKEN` on both services. Set the worker's `API_URL` to the deployed API's base URL. Set `CORS_ORIGINS` on the API to the frontend site's exact origin. Keep Atlas and runtime credentials in the host's secret environment settings. Do not deploy the current FastAPI entry point as a serverless function: see [the deployment architecture](docs/deployment.md).
+Set `DEPLOYMENT_MODE=hosted`, `STORAGE=mongo`, `MONGODB_URI`, `MONGODB_DATABASE`, `RUNTIME_TOKEN`, and `EVALUATOR_TOKEN` on both services. Generate each key separately with `openssl rand -hex 32`. Give the evaluator only the evaluator key and schedule one authorized demonstration at a time on the shared simulation. Set the worker's `API_URL` to the deployed API's base URL. Set `CORS_ORIGINS` on the API to the frontend site's exact origin. Keep Atlas and runtime credentials in the host's secret environment settings. Do not deploy the current FastAPI entry point as a serverless function: see [the deployment architecture](docs/deployment.md).
 
 ## Dashboard features
 
@@ -79,6 +79,18 @@ flowchart LR
 
 The simulator uses five-minute steps. Envelope transfer, occupancy gains and equal-and-opposite flows between B1/B2 and D1/D2 determine zone temperatures. Each RTU conditions only its own zone. Supply temperature is estimated from sensible output, airflow, air density and specific heat. The model uses °C internally and °F on telemetry and dashboard boundaries. Stage ratings, thresholds and thermal parameters are synthetic and configurable.
 
+Occupancy is tracked independently for each zone. Scenario schedules provide the baseline; persistent overrides and timed temporary groups are applied on top. The dashboard's **Change room occupancy** control can record arrivals, departures, transfers, one-off room totals, and temporary groups, or restore the scenario schedule. Occupancy above a zone's design count is accepted, flagged in the room view, and included in physical occupant heat gains. The shared comfort policy confirms vacancy before using unoccupied setpoints and can precondition toward the next scheduled arrival. Telemetry includes the effective target range, occupied targets, and occupancy state. FAN circulates air without adding heating or cooling capacity.
+
+Unit Agents forecast comfort over the configured horizon using expected scheduled occupancy, outdoor conditions, local thermal properties, and available neighbouring-zone temperatures. Their intents include ranked alternatives, projected temperatures, occupancy ratios and decision signals. Area Agents summarize occupancy, temperature deviation, available equipment and potential concessions. The Power Agent protects required FAN/equipment loads and checks bilateral or multi-donor concessions atomically against the shared cap. Decisions and area summaries are recorded with the interval evidence.
+
+The same occupancy actions are available through `POST /environment/change`, for example:
+
+```json
+{"occupancy_actions":[{"kind":"temporary_add","zone_id":"B1","count":5,"duration_minutes":30}]}
+```
+
+Action kinds are `set`, `arrival`, `departure`, `transfer`, `temporary_add`, and `restore_schedule`. Transfers specify `source_zone_id`, `destination_zone_id`, and `count`; other actions use `zone_id`. All changes apply at the next simulation interval.
+
 A simulation interval applies scheduled disturbances, writes observations, waits for valid agent decisions, applies a feasible command batch, and advances the plant. The backend checks both stage safety and electrical power against the reservation. The Power Budget Agent serializes assignments and uses a version to reject stale swaps. Each bilateral SPADE state machine uses a bounded number of proposals. Confirmed terms apply for one simulation interval. On a live decision timeout, the backend records a fallback and chooses feasible stages. Experiment runs reject timeouts so timing failures do not enter controller comparisons.
 
 The change stream checkpoints after validated ingestion into the gateway buffer. Restart reconciles unexpired observations, and the active manifest constrains dispatch to the intended run, interval, and packet IDs. Diagnostics evaluate one observation per unit and step, without access to physical fault truth. G2 and G5 are configurable academic thresholds and their qualification includes persistence and recovery monitoring.
@@ -96,3 +108,23 @@ python scripts/check_integration.py
 ```
 
 The integration check creates synthetic runs and a uniquely named short-TTL probe collection in the selected database. Run it only against a disposable database. The scenario evidence, assumptions and remaining verification limits are recorded in [verification.md](docs/verification.md).
+
+### Watching the backend and agents
+
+Start the local services from this directory:
+
+```sh
+HVAC_PYTHON=.venv312/bin/python ./scripts/dev.sh
+```
+
+The launcher shows both services in the terminal and also saves `results/logs/backend.log` and `results/logs/agents.log`. It refuses to start a second API or embedded XMPP server on occupied ports.
+
+```sh
+tail -f results/logs/backend.log results/logs/agents.log
+```
+
+At INFO level, look for `API_READY`, twelve `AGENT_STARTING` lines, `AGENTS_READY count=12`, and `RUNTIME_HEALTH`. Each interval logs `INTERVAL_STARTED`, `DECISION_STARTED`, `INTERVAL_COMMITTED`, and six `UNIT_DECISION` lines with requested/applied stages and demand reason codes. `AGENT_EVENT` reports diagnostic and negotiation outcomes; `INTERVENTION_QUEUED` and `INTERVENTION_APPLIED` connect edits to their accepted/committed step. A missed deadline emits `AGENT_DEADLINE_MISSED` and a `fallback` outcome. Failures emit `INTERVAL_FAILED`, `AUTOPLAY_STOPPED`, or `EXPERIMENT_FAILED`.
+
+Set `LOG_LEVEL=DEBUG` for per-message routing logs (`MESSAGE_SENT`); INFO stays readable. Raw XMPP payload logging is suppressed to avoid exposing credentials. Connection/readiness and successful commits are different checks: a connected agent team can still miss a deadline, and a committed action does not by itself establish scientific claims about emergence or optimal comfort.
+
+See [dashboard API semantics](docs/dashboard-api.md) for scheduling, interval metrics and evidence identifiers.

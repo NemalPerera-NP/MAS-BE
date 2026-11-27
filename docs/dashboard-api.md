@@ -1,0 +1,14 @@
+# Dashboard state and operational evidence
+
+The dashboard uses the existing FastAPI API; `/docs` exposes its current schema. Dashboard routes retain evaluator authentication, and worker routes retain `X-Runtime-Token` authentication.
+
+- `GET /simulation/state` includes `execution` (`not_started`, `processing`, `mas_committed`, `fallback`, `failed`), last committed step, duration in milliseconds, historical fallback count and last successful MAS step. `runtime` includes independent worker heartbeat data, stream readiness, busy job and agent message timestamps. A heartbeat establishes connectivity, not successful control.
+- `POST /internal/heartbeat` accepts `agents`, `stream_ready`, `busy_job`, and `agent_activity` separately from work polling and decisions. The runtime emits this while a decision or database commit is pending.
+- `GET /agents/topology` returns configured agent roles, purposes, connectivity and supported communication links. Links describe implemented routes, not live message activity.
+- Accepted environment/fault/observation edits return the accepted `simulationStep`, `apply_at_minutes` and `visible_after_minutes`. An interval starting at minute 80 commits its result at minute 85. Requests arriving during an active interval wait for its commit and may be accepted for a later step. Environment/fault edits can specify a future zero-based `at_step`. Observation edits apply to upcoming observations. Live edits return 409 during experiments.
+- Temporary occupancy is admitted in five-minute multiples, matching the plant time step. Previously saved completed history remains readable. Action records retain `interval_zone_context` so an expiring visit is measured against people and targets present during that interval.
+- Message evidence IDs use `message:<traceId>` including lifecycle suffixes. Event evidence IDs use `agent-event:<eventId>`. Feature support IDs reference these exact evidence IDs. Feature status describes the recorded run history, rather than the current controller's health.
+- Export `message_count` counts logical message identities; `message_trace_count` counts lifecycle records. `mean_message_ms` uses valid received delivery delays once per message. Sent records without a delay and terminal negotiation events without rounds are valid.
+- `GET /experiments/{id}` includes actions and events for visual reports. Add `include_messages=true` to retrieve full message traces. Experiment summaries reference the source live run even when the comparison starts from a scenario. A completed butterfly classification is retained as live history grows; a queued change alone does not prove propagation or emergence.
+
+Live readings refresh separately from bounded recorded history. Slower history calls no longer discard valid same-run results whenever the next interval advances. Message history loads on demand and groups delivery states, with explicit coverage and a load-more control.

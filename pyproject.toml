@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Academic smart-building HVAC multi-agent simulator"
 requires-python = ">=3.11,<3.14"
 dependencies = [
-  "spade==4.1.4", "pymongo>=4.13,<5", "dnspython>=2.6,<3", "fastapi", "uvicorn[standard]",
+  "spade==4.1.4", "pyjabber>=0.4.3,<0.5", "loguru", "pymongo>=4.13,<5", "dnspython>=2.6,<3", "fastapi", "uvicorn[standard]",
   "pydantic>=2", "pydantic-settings", "pyyaml", "httpx"
 ]
 

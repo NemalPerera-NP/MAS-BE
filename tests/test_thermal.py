@@ -43,6 +43,21 @@ def test_long_step_does_not_overshoot_outdoor():
     assert all(20 <= t <= 30 for t in result.values())
 
 
-def test_missing_zone_rejected():
-    with pytest.raises(ValueError):
-        advance_temperatures(B, {}, outdoor_c=30, occupancy=dict.fromkeys(IDS, 0), hvac_kw=dict.fromkeys(IDS, 0))
+def test_over_design_occupancy_uses_the_full_physical_heat_gain():
+    temperatures = dict.fromkeys(IDS, 24.0)
+    hvac = dict.fromkeys(IDS, 0.0)
+    outside = 24.0
+    base = dict.fromkeys(IDS, 0)
+    at_design = advance_temperatures(B, temperatures, outdoor_c=outside,
+                                     occupancy=base | {"D1": 25}, hvac_kw=hvac)
+    over_design = advance_temperatures(B, temperatures, outdoor_c=outside,
+                                       occupancy=base | {"D1": 40}, hvac_kw=hvac)
+    assert over_design["D1"] > at_design["D1"]
+    assert (over_design["D1"] - at_design["D1"]) > 0
+
+
+def test_occupancy_above_technical_limit_is_rejected():
+    with pytest.raises(ValueError, match="occupancy must be integers"):
+        advance_temperatures(B, dict.fromkeys(IDS, 24.0), outdoor_c=24.0,
+                             occupancy={**dict.fromkeys(IDS, 0), "D1": 1001},
+                             hvac_kw=dict.fromkeys(IDS, 0.0))

@@ -1,7 +1,7 @@
 """Validated building configuration. All thermal temperatures are in degrees C."""
 from enum import StrEnum
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -96,10 +96,46 @@ class Thermostat(ConfigModel):
         return self
 
 
+class OccupancyPolicy(ConfigModel):
+    """Per-zone occupancy assumptions and future comfort-policy settings.
+
+    Occupied targets remain authoritative on the zone's Thermostat. The
+    unoccupied targets live here so the two policies cannot silently diverge.
+    All temperatures use the model's internal Celsius convention.
+    """
+
+    design_occupancy: int = Field(gt=0, le=1000, strict=True)
+    unoccupied_confirmation_minutes: int = Field(default=10, ge=0, le=1440)
+    unoccupied_heat_setpoint_c: float = Field(default=(60 - 32) * 5 / 9,
+                                              ge=(40 - 32) * 5 / 9, le=(100 - 32) * 5 / 9)
+    unoccupied_cool_setpoint_c: float = Field(default=(78 - 32) * 5 / 9,
+                                              ge=(40 - 32) * 5 / 9, le=(100 - 32) * 5 / 9)
+    occupied_fan_policy: Literal['auto', 'continuous'] = 'continuous'
+    unoccupied_fan_policy: Literal['auto', 'continuous'] = 'continuous'
+    preconditioning_enabled: bool = True
+    preconditioning_minutes: int = Field(default=15, ge=0, le=1440)
+    overload_warning_ratio: Positive = 1.0
+
+    @model_validator(mode='after')
+    def valid_unoccupied_setpoints(self):
+        if self.unoccupied_heat_setpoint_c >= self.unoccupied_cool_setpoint_c:
+            raise ValueError('unoccupied heating setpoint must be below unoccupied cooling setpoint')
+        return self
+
+    def occupancy_ratio(self, actual_occupancy: int) -> float:
+        if isinstance(actual_occupancy, bool) or not isinstance(actual_occupancy, int) or actual_occupancy < 0:
+            raise ValueError('actual occupancy must be a non-negative integer')
+        return actual_occupancy / self.design_occupancy
+
+    def is_over_design(self, actual_occupancy: int) -> bool:
+        return self.occupancy_ratio(actual_occupancy) > self.overload_warning_ratio
+
+
 class Zone(ConfigModel):
     zone_id: Identifier
     area_id: Identifier
     thermostat: Thermostat
+    occupancy_policy: OccupancyPolicy
     unit_ids: tuple[Identifier, ...] = Field(min_length=1)
     floor_area_m2: Positive
     capacitance_kwh_per_c: Positive
