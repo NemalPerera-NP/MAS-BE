@@ -1,0 +1,44 @@
+normal_cooling:
+  title: Healthy summer
+  description: Watch all six RTUs respond to the warm-day profile.
+normal_heating:
+  title: Healthy winter
+  description: Compare gas, resistance and heat-pump operation.
+  cold_day: true
+  initial:
+    zone_temperature_f: {A1: 63, B1: 63, B2: 63, C1: 63, D1: 63, D2: 63}
+power_constraint:
+  title: Constrained cooling
+  description: Inspect power reservations and peer concessions.
+  initial:
+    outdoor_f: 91
+    power_limit_kw: 11
+    zone_temperature_f: {A1: 74, B1: 79, B2: 74, C1: 74, D1: 74, D2: 74}
+cooling_failure:
+  title: Cooling degradation
+  description: Follow weak supply air and persistent zone discomfort on RTU-B1.
+  initial:
+    outdoor_f: 95
+    zone_temperature_f: {B1: 79}
+  faults: [{unit_id: RTU-B1, kind: cooling_degradation, at_step: 2}]
+heating_failure:
+  title: Heating degradation
+  description: Compare heating performance before and after capacity loss.
+  cold_day: true
+  initial:
+    zone_temperature_f: {A1: 62, B1: 64, B2: 64, C1: 64, D1: 64, D2: 64}
+  faults: [{unit_id: RTU-A1, kind: heating_degradation, at_step: 2}]
+butterfly:
+  title: Small temperature disturbance
+  description: Compare paired trajectories around a cooling-stage threshold.
+  initial:
+    outdoor_f: 91
+    power_limit_kw: 11
+    zone_temperature_f: {A1: 74, B1: 73.24, B2: 75, C1: 73, D1: 74, D2: 74}
+emergence:
+  title: Collective cooling
+  description: Measure the stage overlap and access to capacity that follow local decisions.
+  initial:
+    outdoor_f: 94
+    power_limit_kw: 11
+    zone_temperature_f: {A1: 77, B1: 78, B2: 77, C1: 76, D1: 77, D2: 77}

@@ -1,0 +1,264 @@
+# Synthetic assumptions; stage capacities and power are total, not incremental.
+building_id: HQ
+name: Synthetic commercial building
+power_limit_kw: 17.0
+areas:
+- area_id: A
+  name: Meeting Room
+  zone_ids:
+  - A1
+  priority: 1
+- area_id: B
+  name: Open Office
+  zone_ids:
+  - B1
+  - B2
+  priority: 1
+- area_id: C
+  name: Private Office
+  zone_ids:
+  - C1
+  priority: 1
+- area_id: D
+  name: Training Room
+  zone_ids:
+  - D1
+  - D2
+  priority: 1
+zones:
+- zone_id: A1
+  area_id: A
+  thermostat:
+    thermostat_id: TSTAT-A1
+    heat_setpoint_c: 20.0
+    cool_setpoint_c: 21.11111111111111
+  unit_ids:
+  - RTU-A1
+  floor_area_m2: 90
+  capacitance_kwh_per_c: 9
+  outdoor_conductance_kw_per_c: 0.24
+  base_load_kw: 0.6000000000000001
+- zone_id: B1
+  area_id: B
+  thermostat:
+    thermostat_id: TSTAT-B1
+    heat_setpoint_c: 20.0
+    cool_setpoint_c: 21.11111111111111
+  unit_ids:
+  - RTU-B1
+  floor_area_m2: 150
+  capacitance_kwh_per_c: 15
+  outdoor_conductance_kw_per_c: 0.4
+  base_load_kw: 1.0
+- zone_id: B2
+  area_id: B
+  thermostat:
+    thermostat_id: TSTAT-B2
+    heat_setpoint_c: 20.0
+    cool_setpoint_c: 21.11111111111111
+  unit_ids:
+  - RTU-B2
+  floor_area_m2: 150
+  capacitance_kwh_per_c: 15
+  outdoor_conductance_kw_per_c: 0.4
+  base_load_kw: 1.0
+- zone_id: C1
+  area_id: C
+  thermostat:
+    thermostat_id: TSTAT-C1
+    heat_setpoint_c: 20.0
+    cool_setpoint_c: 21.11111111111111
+  unit_ids:
+  - RTU-C1
+  floor_area_m2: 60
+  capacitance_kwh_per_c: 6
+  outdoor_conductance_kw_per_c: 0.16
+  base_load_kw: 0.4
+- zone_id: D1
+  area_id: D
+  thermostat:
+    thermostat_id: TSTAT-D1
+    heat_setpoint_c: 20.0
+    cool_setpoint_c: 21.11111111111111
+  unit_ids:
+  - RTU-D1
+  floor_area_m2: 120
+  capacitance_kwh_per_c: 12
+  outdoor_conductance_kw_per_c: 0.32
+  base_load_kw: 0.8
+- zone_id: D2
+  area_id: D
+  thermostat:
+    thermostat_id: TSTAT-D2
+    heat_setpoint_c: 20.0
+    cool_setpoint_c: 21.11111111111111
+  unit_ids:
+  - RTU-D2
+  floor_area_m2: 120
+  capacitance_kwh_per_c: 12
+  outdoor_conductance_kw_per_c: 0.32
+  base_load_kw: 0.8
+equipment:
+- unit_id: RTU-A1
+  zone_id: A1
+  nominal_tonnage: 3
+  heating_type: gas
+  stages:
+  - name: FAN
+    thermal_capacity_kw: 0
+    electrical_power_kw: 0.25
+    airflow_m3_s: 0.25
+    min_on_seconds: 0
+    min_off_seconds: 0
+    min_stage_duration_seconds: 0
+  - name: COOL1
+    thermal_capacity_kw: 5.803
+    electrical_power_kw: 1.2
+    airflow_m3_s: 0.36
+  - name: COOL2
+    thermal_capacity_kw: 10.551
+    electrical_power_kw: 2.7
+    airflow_m3_s: 0.48
+    requires: COOL1
+  - name: HEAT1
+    thermal_capacity_kw: 9.0
+    electrical_power_kw: 0.4
+    fuel_input_kw: 11.25
+    airflow_m3_s: 0.36
+- unit_id: RTU-B1
+  zone_id: B1
+  nominal_tonnage: 5
+  heating_type: heat_pump
+  stages:
+  - name: FAN
+    thermal_capacity_kw: 0
+    electrical_power_kw: 0.25
+    airflow_m3_s: 0.25
+    min_on_seconds: 0
+    min_off_seconds: 0
+    min_stage_duration_seconds: 0
+  - name: COOL1
+    thermal_capacity_kw: 9.671
+    electrical_power_kw: 2.0
+    airflow_m3_s: 0.6
+  - name: COOL2
+    thermal_capacity_kw: 17.584
+    electrical_power_kw: 4.3
+    airflow_m3_s: 0.8
+    requires: COOL1
+  - name: HEAT1
+    thermal_capacity_kw: 15.0
+    electrical_power_kw: 7.5
+    fuel_input_kw: 0
+    airflow_m3_s: 0.6
+- unit_id: RTU-B2
+  zone_id: B2
+  nominal_tonnage: 5
+  heating_type: heat_pump
+  stages:
+  - name: FAN
+    thermal_capacity_kw: 0
+    electrical_power_kw: 0.25
+    airflow_m3_s: 0.25
+    min_on_seconds: 0
+    min_off_seconds: 0
+    min_stage_duration_seconds: 0
+  - name: COOL1
+    thermal_capacity_kw: 9.671
+    electrical_power_kw: 2.0
+    airflow_m3_s: 0.6
+  - name: COOL2
+    thermal_capacity_kw: 17.584
+    electrical_power_kw: 4.3
+    airflow_m3_s: 0.8
+    requires: COOL1
+  - name: HEAT1
+    thermal_capacity_kw: 15.0
+    electrical_power_kw: 7.5
+    fuel_input_kw: 0
+    airflow_m3_s: 0.6
+- unit_id: RTU-C1
+  zone_id: C1
+  nominal_tonnage: 2
+  heating_type: electric
+  stages:
+  - name: FAN
+    thermal_capacity_kw: 0
+    electrical_power_kw: 0.25
+    airflow_m3_s: 0.25
+    min_on_seconds: 0
+    min_off_seconds: 0
+    min_stage_duration_seconds: 0
+  - name: COOL1
+    thermal_capacity_kw: 3.869
+    electrical_power_kw: 0.8
+    airflow_m3_s: 0.24
+  - name: COOL2
+    thermal_capacity_kw: 7.034
+    electrical_power_kw: 1.8
+    airflow_m3_s: 0.32
+    requires: COOL1
+  - name: HEAT1
+    thermal_capacity_kw: 4.0
+    electrical_power_kw: 4.0
+    fuel_input_kw: 0
+    airflow_m3_s: 0.24
+- unit_id: RTU-D1
+  zone_id: D1
+  nominal_tonnage: 4
+  heating_type: gas
+  stages:
+  - name: FAN
+    thermal_capacity_kw: 0
+    electrical_power_kw: 0.25
+    airflow_m3_s: 0.25
+    min_on_seconds: 0
+    min_off_seconds: 0
+    min_stage_duration_seconds: 0
+  - name: COOL1
+    thermal_capacity_kw: 7.737
+    electrical_power_kw: 1.6
+    airflow_m3_s: 0.48
+  - name: COOL2
+    thermal_capacity_kw: 14.067
+    electrical_power_kw: 3.4
+    airflow_m3_s: 0.64
+    requires: COOL1
+  - name: HEAT1
+    thermal_capacity_kw: 12.0
+    electrical_power_kw: 0.4
+    fuel_input_kw: 15.0
+    airflow_m3_s: 0.48
+- unit_id: RTU-D2
+  zone_id: D2
+  nominal_tonnage: 4
+  heating_type: gas
+  stages:
+  - name: FAN
+    thermal_capacity_kw: 0
+    electrical_power_kw: 0.25
+    airflow_m3_s: 0.25
+    min_on_seconds: 0
+    min_off_seconds: 0
+    min_stage_duration_seconds: 0
+  - name: COOL1
+    thermal_capacity_kw: 7.737
+    electrical_power_kw: 1.6
+    airflow_m3_s: 0.48
+  - name: COOL2
+    thermal_capacity_kw: 14.067
+    electrical_power_kw: 3.4
+    airflow_m3_s: 0.64
+    requires: COOL1
+  - name: HEAT1
+    thermal_capacity_kw: 12.0
+    electrical_power_kw: 0.4
+    fuel_input_kw: 15.0
+    airflow_m3_s: 0.48
+couplings:
+- zone_a: B1
+  zone_b: B2
+  conductance_kw_per_c: 0.15
+- zone_a: D1
+  zone_b: D2
+  conductance_kw_per_c: 0.12

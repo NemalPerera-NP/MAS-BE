@@ -1,0 +1,14 @@
+diagnostics:
+  g2_f: 2
+  g5_f: 5
+  window_minutes: 40
+  min_occurrences: 5
+  recovery_minutes: 20
+  fdd_occurrences: 3
+  fdd_fraction: 0.55
+  improvement_f_per_minute: 0.055
+control:
+  hysteresis_c: 0.3
+  high_stage_error_c: 1.5
+  comfort_band_c: 0.5
+  max_rounds: 3
