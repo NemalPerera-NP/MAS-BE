@@ -1,0 +1,23 @@
+[Unit]
+Description=HVAC MAS SPADE agent runtime
+Wants=network-online.target
+After=network-online.target hvac-mas-api.service
+Requires=hvac-mas-api.service
+
+[Service]
+Type=simple
+User=hvacmas
+Group=hvacmas
+WorkingDirectory=/opt/hvac-mas
+EnvironmentFile=/etc/hvac-mas/hvac-mas.env
+ExecStart=/opt/hvac-mas/.venv/bin/python -m hvac_mas.runtime
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

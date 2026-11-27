@@ -38,7 +38,7 @@ If startup reports that the MongoDB DNS lookup timed out, reconnect or try anoth
 
 ## Deploy the backend
 
-Deploy this repository as two long-running Python services on a host that supports web services and background workers (for example, Render). The current API and agent handshake uses in-process coordination, so run one API instance and one worker.
+Deploy this repository as two long-running Python services on a host that supports web services and background workers. For an Oracle Cloud Ubuntu VM deployment, follow [`deploy/oracle/README.md`](deploy/oracle/README.md). The current API and agent handshake uses in-process coordination, so run one API instance and one worker.
 
 | Service | Install command | Start command |
 | --- | --- | --- |

@@ -12,6 +12,8 @@ flowchart LR
 
 Build `MAS_FE` and publish its `dist/` output as a static Vercel site. Deploy `HVAC_MAS_SYS` as a long-running API service and one background worker, with MongoDB Atlas as the shared database. Docker is not required. SPADE starts its embedded XMPP server inside the worker by default.
 
+For an Oracle Cloud Ubuntu VM deployment, see [`../deploy/oracle/README.md`](../deploy/oracle/README.md).
+
 Vercel serves the static front end. Vercel Functions have finite execution durations and are not a suitable host for this continuously running SPADE worker. Use a host with long-running web and worker services for the backend. See [Vercel Functions limits](https://vercel.com/docs/functions/limitations) and [Render background workers](https://render.com/docs/background-workers).
 
 ## Current backend limits

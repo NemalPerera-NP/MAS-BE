@@ -1,0 +1,22 @@
+[Unit]
+Description=HVAC MAS FastAPI service
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=hvacmas
+Group=hvacmas
+WorkingDirectory=/opt/hvac-mas
+EnvironmentFile=/etc/hvac-mas/hvac-mas.env
+ExecStart=/opt/hvac-mas/.venv/bin/uvicorn hvac_mas.api.main:app --host 127.0.0.1 --port 8000
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
